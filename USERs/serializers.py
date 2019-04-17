@@ -1,11 +1,19 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from USERs.models import Account, Topup, TranferBalance#, Payment
+from USERs.models import Account, Topup, TranferBalance  # , Payment
+
 
 class Userserializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "__all__"
+
+
+class UserCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password')
+
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:

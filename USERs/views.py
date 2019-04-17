@@ -1,21 +1,54 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+from django.views.generic import CreateView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from USERs.models import Account, Topup, TranferBalance  # ,Payment
-from .serializers import AccountSerializer, TransferBalanceSerializer,TopUpSerializer,Userserializer
+from .serializers import (
+    AccountSerializer,
+    TransferBalanceSerializer,
+    TopUpSerializer,
+    Userserializer,
+    UserCreationSerializer
+)
+
+
+class UserCreate(CreateView):
+    serializer_class = UserCreationSerializer
+
 
 class Uerlist(APIView):
-    def get(self,request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         if request.user.has_perm('USERs.Can view user'):
             users = User.objects.all()
-            serializer = Userserializer(users , many=True)
+            serializer = Userserializer(users, many=True)
             return Response(serializer.data)
-        return Response("No Permission",status= status.HTTP_400_BAD_REQUEST)
+        return Response("No Permission", status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, *args, **kwargs):
+        serializer = UserCreationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User(
+                email=serializer.data['email'],
+                username=serializer.data['username']
+            )
+            user.set_password(serializer.data['password'])
+            user.save()
+            if user:
+                return Response("User created Successfully!!!",status=status.HTTP_201_CREATED)
+
+            return Response("User creation Failed!!!", status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
 
 
 class Accountlist(APIView):
@@ -37,16 +70,16 @@ class Accountlist(APIView):
 
 
 class TopUP(APIView):
-    def post(self,request,*args,**kwargs):
+    def post(self, request, *args, **kwargs):
         serializer = TopUpSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             amount = serializer.data['amount']
             try:
                 account = Account.objects.get(account_number=request.data['topup_account_number'])
-                if float(account.balance)<=float(amount):
+                if float(account.balance) <= float(amount):
                     return Response("Insufficient Balance!!!", status=status.HTTP_400_BAD_REQUEST)
-                account.balance =float(account.balance)-float(amount)
+                account.balance = float(account.balance) - float(amount)
                 account.save()
                 return Response("Top up Successfull!!!", status=status.HTTP_400_BAD_REQUEST)
             except:
@@ -56,7 +89,7 @@ class TopUP(APIView):
 
 
 class BalanceTransfer(APIView):
-    def post(self,request,*args,**kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             debit_account = Account.objects.get(account_number=request.data['debit_account'])
             credit_account = Account.objects.get(account_number=request.data['credit_account'])
@@ -70,10 +103,10 @@ class BalanceTransfer(APIView):
             credit_account.balance = float(credit_account.balance) + float(amount)
 
             tb = TranferBalance.objects.create(
-                debit_account = debit_account,
-                credit_account = credit_account,
-                amount = amount,
-                transection_type = t_type,
+                debit_account=debit_account,
+                credit_account=credit_account,
+                amount=amount,
+                transection_type=t_type,
             )
             if tb:
                 debit_account.save()
@@ -82,14 +115,6 @@ class BalanceTransfer(APIView):
 
         except:
             return Response("Invalid account!!!", status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-
-
-
 
 
 """
@@ -121,7 +146,3 @@ class BalanceTransfer(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 """
-
-
-
-

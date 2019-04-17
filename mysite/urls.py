@@ -4,9 +4,11 @@ from USERs import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('userlist',views.Uerlist.as_view()),
-    path('accountlist',views.Accountlist.as_view()),
-    path('topup',views.TopUP.as_view()),
-    path('balancetransfer',views.BalanceTransfer.as_view()),
+    path('userlist/',views.Uerlist.as_view()),
+    path("usercreate/", views.Uerlist.as_view(), name="user_create"),
+
+    path('accountlist/',views.Accountlist.as_view()),
+    path('topup/',views.TopUP.as_view()),
+    path('balancetransfer/',views.BalanceTransfer.as_view()),
 
 ]
